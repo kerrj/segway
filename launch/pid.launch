@@ -1,0 +1,4 @@
+<launch>
+<include file="$(find segway)/launch/hardware.launch"/>
+<node name="pid_controller" type="pid_controller.py" pkg="segway" output="screen"/>
+</launch>

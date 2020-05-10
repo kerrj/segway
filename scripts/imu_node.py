@@ -2,9 +2,9 @@
 import BNO055
 import rospy
 import numpy as np
-from segway.msg import SegwayAngle
+from segway.msg import AngleReading
 bno = BNO055.BNO055(serial_port='/dev/ttyS0',rst=18)
-rospy.init_node('IMU_node')
+rospy.init_node('imu_node')
 # Initialize the BNO055 and stop if something went wrong.
 if not bno.begin(mode=BNO055.OPERATION_MODE_IMUPLUS):
     rospy.signal_shutdown('Failed to initialize BNO055!')
@@ -24,10 +24,11 @@ if status == 0x01:
     rospy.signal_shutdown("BNO055 error")
 
 rate=rospy.Rate(100)
-statepub=rospy.Publisher('angle',SegwayAngle,queue_size=1)
+statepub=rospy.Publisher('angle',AngleReading,queue_size=10)
 rospy.loginfo("Beginning data stream")
 while not rospy.is_shutdown():
-    msg=SegwayAngle()
+    rate.sleep()
+    msg=AngleReading()
     xGrav,yGrav,zGrav=bno.read_gravity()
     xOmega,yOmega,zOmega=bno.read_gyroscope()
     msg.stamp=rospy.get_rostime()
@@ -39,4 +40,3 @@ while not rospy.is_shutdown():
     #sign is negative on the below line to make thdot and th match
     msg.th=-sgn*np.arccos(projectedGrav.dot(desiredDir)/(np.linalg.norm(projectedGrav)*np.linalg.norm(desiredDir)))
     statepub.publish(msg)
-    rate.sleep()

@@ -1,0 +1,4 @@
+<launch>
+<node name="imu_node" pkg="segway" type="imu_node.py" output="screen" required="true"/>
+<node name="motor_node" pkg="segway" type="motor_node.py" output="screen" required="true"/>
+</launch>
