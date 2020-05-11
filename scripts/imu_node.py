@@ -15,7 +15,6 @@ while status<5:
     status,self_test,error=bno.get_system_status()
     rospy.loginfo('System status: {0}'.format(status))
     rospy.loginfo('Self test result (0x0F is normal): 0x{0:02X}'.format(self_test))
-rospy.loginfo("System status 5 returned")
 bno.load_calib()
 # Print out an error if system status is in error mode.
 if status == 0x01:
@@ -25,7 +24,8 @@ if status == 0x01:
 
 rate=rospy.Rate(100)
 statepub=rospy.Publisher('angle',AngleReading,queue_size=10)
-rospy.loginfo("Beginning data stream")
+rospy.sleep(rospy.Duration(1))
+rospy.loginfo("Beginning imu stream")
 while not rospy.is_shutdown():
     rate.sleep()
     msg=AngleReading()

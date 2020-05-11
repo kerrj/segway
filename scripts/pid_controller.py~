@@ -4,69 +4,52 @@
 import rospy
 import numpy as np
 from segway.msg import AngleReading,EncoderReading,MotorCommand
-from util import RunningAverage
-RATE=60
-ANGLE_OFFSET=-.005
+RATE=50
 WHEEL_RAD = .08
-SPEED_WINDOW=round(.2*RATE)
 th = None
 thdot = None
 x = None
 xdot = None
-speedAvg=RunningAverage(SPEED_WINDOW)
 def clip(v,minv,maxv):
     return min(max(v,minv),maxv)
 class PID(object):
-    def __init__(self,p,i,d,ioutputcap=None,outputcap=None):
+    def __init__(self,p,i,d,ioutputcap):
         #icap is in units of output, ie capped output after multiplying by i
         self.p=p
         self.i=i
         self.d=d
-        if ioutputcap is None:
-            self.icap=float('inf')
-        else:
-            self.icap=ioutputcap/self.i if self.i>0 else 1
+        self.icap=ioutputcap/self.i if self.i>0 else 1
         self.sum=0
-        self.lasterr=0
-        self.outputcap=outputcap
     def step(self,err,derr,dt):
-        self.sum+=err
-        self.sum=clip(self.sum,-self.icap/dt,self.icap/dt)
-        if self.outputcap is None:
-            return self.p*err+self.i*self.sum*dt+self.d*derr
-        else:
-            return clip(self.p*err+self.i*self.sum*dt+self.d*derr,-self.outputcap,self.outputcap)
-
+        self.sum+=dt*err
+        self.sum=clip(self.sum,-self.icap,self.icap)
+        return self.p*err+self.i*self.sum+self.d*derr
 
 def angleCB(msg):
     global th,thdot
-    th=msg.th+ANGLE_OFFSET
+    th=msg.th
     thdot=msg.thdot
 def encoderCB(msg):
     global x,xdot
     #just use the left value for now
     x = msg.leftAngle*WHEEL_RAD
-    speedAvg.add(msg.leftVel*WHEEL_RAD)
-    xdot = speedAvg.avg()
+    xdot = msg.leftVel*WHEEL_RAD
+
 rospy.init_node("pid")
 angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
 encoderSub = rospy.Subscriber('encoders',EncoderReading,encoderCB,queue_size=1)
 controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
-#prettyfuckinggood
-#pid1=PID(.05,0.01,.075,ioutputcap=.01,outputcap=.05)
-#pid2=PID(70,250,1.6,20)
-pid1=PID(.05,0.01,.075,ioutputcap=.01,outputcap=.05)
-pid2=PID(75,250,1.6,20)
+pid=PID(10,2,1,3)
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
+        print("no data")
         continue
     command=MotorCommand()
     command.stamp=rospy.get_rostime()
-    intermediate=pid1.step(x,xdot,1/RATE)
-    u=pid2.step(th+intermediate,thdot,1/RATE)
+    u=pid.step(th,thdot)
     command.left=u
     command.right=u
     controlPub.publish(command)
