@@ -4,7 +4,7 @@
 import rospy
 import numpy as np
 from segway.msg import AngleReading,EncoderReading,MotorCommand
-from util import RunningAverage
+from util import RunningAverage,clip
 RATE=60
 ANGLE_OFFSET=-.005
 WHEEL_RAD = .04
@@ -15,8 +15,6 @@ x = None
 xdot = None
 speedAvg=RunningAverage(SPEED_WINDOW)
 
-def clip(v,minv,maxv):
-    return min(max(v,minv),maxv)
 
 class PID(object):
     def __init__(self,p,i,d,ioutputcap=None,outputcap=None):
@@ -60,7 +58,7 @@ pid1=PID(.25,0.05,.08,ioutputcap=.01,outputcap=.045)
 pid2=PID(75,250,1.6,20)
 
 targetpos=0
-targetspeed=0
+targetspeed=0.03
 start=rospy.get_rostime()
 while not rospy.is_shutdown():
     rate.sleep()

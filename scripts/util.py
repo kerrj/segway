@@ -13,3 +13,5 @@ class RunningAverage(object):
             self.sum+=elem
     def avg(self):
         return self.sum/len(self.q)
+def clip(v,minv,maxv):
+    return min(max(v,minv),maxv)

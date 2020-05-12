@@ -8,11 +8,9 @@ import rospy
 from segway.msg import MotorCommand,EncoderReading
 from threading import Lock
 from math import pi
-from util import RunningAverage
+from util import RunningAverage,clip
 from queue import deque
 
-def clip(v,minv,maxv):
-    return min(max(v,minv),maxv)
 
 
 COUNTS_PER_REV=1632.67
