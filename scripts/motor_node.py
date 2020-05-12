@@ -17,7 +17,7 @@ COUNTS_PER_REV=1632.67
 COUNTS_PER_RAD=COUNTS_PER_REV/(2*pi)
 ADR=0x80
 MAX_SPEED=20#units in radians
-TIMEOUT=.5
+TIMEOUT=.25
 RATE=200
 SPEED_WINDOW=10#number of samples to average speed over
 
@@ -68,8 +68,6 @@ while not rospy.is_shutdown():
         rc.ForwardM2(ADR,0)
     m1enc=rc.ReadEncM1(ADR)[1]
     m2enc=rc.ReadEncM2(ADR)[1]
-    #m1clicks=rc.ReadISpeedM1(ADR)[1]
-    #m2clicks=rc.ReadSpeedM2(ADR)[1]
     rcLock.release()
     m1clicks=m1enc-m1last
     m2clicks=m2enc-m2last
@@ -86,7 +84,7 @@ while not rospy.is_shutdown():
     e.stamp=stamp
     #CHANGE M1/M2 CORRESPONDENCE BELOW ON ALL 4 LINES
     e.leftAngle=m1pos
-    e.leftVel=RATE*m1AvgDelta.avg()
+    e.leftVel=RATE*m1AvgDelta.value()
     e.rightAngle=m2pos
-    e.rightVel=RATE*m2AvgDelta.avg()
+    e.rightVel=RATE*m2AvgDelta.value()
     statepub.publish(e)

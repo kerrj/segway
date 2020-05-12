@@ -46,7 +46,7 @@ def encoderCB(msg):
     #just use the left value for now
     x = msg.leftAngle*WHEEL_RAD
     speedAvg.add(msg.leftVel*WHEEL_RAD)
-    xdot = speedAvg.avg()
+    xdot = speedAvg.value()
 
 rospy.init_node("pid")
 angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
