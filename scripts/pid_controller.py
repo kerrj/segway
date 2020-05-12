@@ -7,15 +7,17 @@ from segway.msg import AngleReading,EncoderReading,MotorCommand
 from util import RunningAverage
 RATE=60
 ANGLE_OFFSET=-.005
-WHEEL_RAD = .08
-SPEED_WINDOW=round(.2*RATE)
+WHEEL_RAD = .04
+SPEED_WINDOW=round(.4*RATE)
 th = None
 thdot = None
 x = None
 xdot = None
 speedAvg=RunningAverage(SPEED_WINDOW)
+
 def clip(v,minv,maxv):
     return min(max(v,minv),maxv)
+
 class PID(object):
     def __init__(self,p,i,d,ioutputcap=None,outputcap=None):
         #icap is in units of output, ie capped output after multiplying by i
@@ -37,7 +39,6 @@ class PID(object):
         else:
             return clip(self.p*err+self.i*self.sum*dt+self.d*derr,-self.outputcap,self.outputcap)
 
-
 def angleCB(msg):
     global th,thdot
     th=msg.th+ANGLE_OFFSET
@@ -48,24 +49,28 @@ def encoderCB(msg):
     x = msg.leftAngle*WHEEL_RAD
     speedAvg.add(msg.leftVel*WHEEL_RAD)
     xdot = speedAvg.avg()
+
 rospy.init_node("pid")
 angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
 encoderSub = rospy.Subscriber('encoders',EncoderReading,encoderCB,queue_size=1)
 controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
-#prettyfuckinggood
-#pid1=PID(.05,0.01,.075,ioutputcap=.01,outputcap=.05)
-#pid2=PID(70,250,1.6,20)
-pid1=PID(.05,0.01,.075,ioutputcap=.01,outputcap=.05)
+pid1=PID(.25,0.05,.08,ioutputcap=.01,outputcap=.045)
 pid2=PID(75,250,1.6,20)
+
+targetpos=0
+targetspeed=0
+start=rospy.get_rostime()
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
+        start=rospy.get_rostime()
         continue
+    targetpos+=targetspeed/RATE
     command=MotorCommand()
     command.stamp=rospy.get_rostime()
-    intermediate=pid1.step(x,xdot,1/RATE)
+    intermediate=pid1.step(x-targetpos,xdot-targetspeed,1/RATE)
     u=pid2.step(th+intermediate,thdot,1/RATE)
     command.left=u
     command.right=u
