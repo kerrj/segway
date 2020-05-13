@@ -8,7 +8,7 @@ from util import RunningAverage
 RATE=60
 ANGLE_OFFSET=-.005
 WHEEL_RAD = .04
-SPEED_WINDOW=4
+SPEED_WINDOW=4#speed window here of 4+100hz encoders with average window of 5 works well
 th = None
 thdot = None
 x = None
@@ -38,10 +38,7 @@ rate=rospy.Rate(RATE)
 
 start=rospy.get_rostime()
 #K=np.array([-1,-2.39,-41.6,-4.55])#all 1's in R matrix
-
-#K=np.array([-7.07,-6.81,-49.83,-5.70])#x=50
-K=np.array([-7.42,-7.01,-50.2,-5.70])#x=55
-#K=np.array([-7.75,-7.2,-50.53,-5.8])#x=60
+K=np.array([-7.75,-7.31,-51.58,-5.87])#x=60,th=50
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:

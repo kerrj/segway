@@ -8,7 +8,7 @@ import rospy
 from segway.msg import MotorCommand,EncoderReading
 from threading import Lock
 from math import pi
-from util import RunningAverage,clip
+from util import * 
 from queue import deque
 
 
@@ -18,8 +18,8 @@ COUNTS_PER_RAD=COUNTS_PER_REV/(2*pi)
 ADR=0x80
 MAX_SPEED=20#units in radians
 TIMEOUT=.25
-RATE=200
-SPEED_WINDOW=10#number of samples to average speed over
+RATE=100
+SPEED_WINDOW=5#number of samples to average speed over
 
 rospy.init_node("motor_node")
 rc=Roboclaw('/dev/ttyACM0',115200)
@@ -57,9 +57,10 @@ rate=rospy.Rate(RATE)
 
 m1last=rc.ReadEncM1(ADR)[1]
 m2last=rc.ReadEncM2(ADR)[1]
+rospy.loginfo("Beginning roboclaw node")
 m1AvgDelta=RunningAverage(SPEED_WINDOW)
 m2AvgDelta=RunningAverage(SPEED_WINDOW)
-rospy.loginfo("Beginning roboclaw node")
+
 while not rospy.is_shutdown():
     rate.sleep()
     rcLock.acquire()
