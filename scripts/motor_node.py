@@ -10,24 +10,20 @@ from threading import Lock
 from math import pi
 from util import * 
 from queue import deque
-
-
-
+from math import copysign
 COUNTS_PER_REV=1632.67
 COUNTS_PER_RAD=COUNTS_PER_REV/(2*pi)
 ADR=0x80
 MAX_SPEED=20#units in radians
 TIMEOUT=.25
 RATE=100
-SPEED_WINDOW=5#number of samples to average speed over
-
+SPEED_WINDOW=30#number of samples to average speed over
 rospy.init_node("motor_node")
 rc=Roboclaw('/dev/ttyACM0',115200)
 rc.Open()
 rc.ResetEncoders(ADR)
 rcLock=Lock()
 lastCommandTime=rospy.get_rostime()
-
 #callback functions
 def torque_cb(msg):
     rospy.error("Torque control not implemented yet")
@@ -58,17 +54,24 @@ rate=rospy.Rate(RATE)
 m1last=rc.ReadEncM1(ADR)[1]
 m2last=rc.ReadEncM2(ADR)[1]
 rospy.loginfo("Beginning roboclaw node")
-m1AvgDelta=RunningAverage(SPEED_WINDOW)
-m2AvgDelta=RunningAverage(SPEED_WINDOW)
-
+m1AvgDelta=AdaptiveAverage([3,2,1],[0,1,6])
+m2AvgDelta=AdaptiveAverage([3,2,1],[0,1,6])
+#m1AvgI=AdaptiveAverage([30,20,10],[0,3,6])
+#m2AvgI=AdaptiveAverage([30,20,10],[0,3,6])
+#last=rospy.get_rostime().to_time()
 while not rospy.is_shutdown():
     rate.sleep()
+    #cur=rospy.get_rostime().to_time()
+    #print(cur-last)
+    #last=cur
     rcLock.acquire()
     if rospy.get_rostime() - lastCommandTime > rospy.Duration(TIMEOUT):
         rc.ForwardM1(ADR,0)
         rc.ForwardM2(ADR,0)
     m1enc=rc.ReadEncM1(ADR)[1]
     m2enc=rc.ReadEncM2(ADR)[1]
+    #m1ispeed=rc.ReadISpeedM1(ADR)[1]
+    #m2ispeed=rc.ReadISpeedM2(ADR)[1]
     rcLock.release()
     m1clicks=m1enc-m1last
     m2clicks=m2enc-m2last
@@ -81,11 +84,15 @@ while not rospy.is_shutdown():
     m2delta=m2clicks/COUNTS_PER_RAD
     m1AvgDelta.add(m1delta)
     m2AvgDelta.add(m2delta)
+    #m1AvgI.add(m1ispeed)
+    #m2AvgI.add(m2ispeed)
     e=EncoderReading()
     e.stamp=stamp
     #CHANGE M1/M2 CORRESPONDENCE BELOW ON ALL 4 LINES
     e.leftAngle=m1pos
+    #e.leftVel=m1AvgI.value()/COUNTS_PER_RAD
     e.leftVel=RATE*m1AvgDelta.value()
     e.rightAngle=m2pos
+    #e.rightVel=m2AvgI.value()/COUNTS_PER_RAD
     e.rightVel=RATE*m2AvgDelta.value()
     statepub.publish(e)
