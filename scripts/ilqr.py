@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''lqi controller for balancing the segway'''
+'''lqr controller for balancing the segway'''
 
 import rospy
 import numpy as np
@@ -7,27 +7,31 @@ from segway.msg import AngleReading,EncoderReading,MotorCommand
 from util import clip
 from math import copysign
 RATE=100
-ANGLE_OFFSET=.003#-.005
+ANGLE_OFFSET=.003
 WHEEL_RAD = .04
-MAX_VEL=1
+MAX_VEL=3
 SPEED_RAMP=3/RATE#ramp value in rad/s^2 to achieve targetVel
 th = None
 thdot = None
 x = None
 xdot = None#vel in m/s
+lvel = None
+rvel = None
 xanchor=0
 targetVel=MotorCommand(rospy.Time(0),0,0)
-lvel=0#vel in m/s
-rvel=0
+lffvel=0
+rffvel=0
 
 def angleCB(msg):
     global th,thdot
     th=msg.th+ANGLE_OFFSET
     thdot=msg.thdot
 def encoderCB(msg):
-    global x,xdot
+    global x,xdot,lvel,rvel
     x = (msg.leftAngle+msg.rightAngle)*(WHEEL_RAD/2)
     xdot=(msg.leftVel+msg.rightVel)*(WHEEL_RAD/2)
+    lvel=msg.leftVel
+    rvel=msg.rightVel
 def targetCB(msg):
     global targetVel
     if abs(msg.left)>MAX_VEL or abs(msg.right)>MAX_VEL:
@@ -50,8 +54,7 @@ controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
 
-K=np.array([-0.7071   ,-3.0172   ,-50.5654    ,-5.9256    ,0.7071])#1s everywhere
-#K=np.array([-2.2678   ,-4.1772   ,-52.9527    ,-6.2726    ,0.3780])#x=6
+K=np.array([ -6.3974   ,-58.2077    ,-7.0080    ,5.4772])#tracking term 25
 start=rospy.get_rostime()
 xi=0#integrator value
 while not rospy.is_shutdown():
@@ -59,30 +62,15 @@ while not rospy.is_shutdown():
     if th is None or x is None:
         start=rospy.get_rostime()
         continue
-    if rospy.get_rostime()-start>rospy.Duration(5):
-        print("go")
-        targetVel.left=-.2
-        targetVel.right=-.2
-    if rospy.get_rostime()-start>rospy.Duration(8):
-        print("Stop")
-        targetVel.left=.2
-        targetVel.right=.2
     command=MotorCommand()
     command.stamp=rospy.get_rostime()
-    lvel,lacc=increment(lvel,targetVel.left,SPEED_RAMP)
-    rvel,racc=increment(rvel,targetVel.right,SPEED_RAMP)
-    if abs(lvel)>0 or abs(rvel)>0:
-        xtrack=0
-        xdottrack=xdot-(lvel+rvel)*(WHEEL_RAD/2)
-        xanchor=x
-    else:
-        xtrack=x-xanchor
-        xdottrack=xdot
-    r=(lvel+rvel)*(WHEEL_RAD/2)
+    lffvel,lffacc=increment(lffvel,targetVel.left,SPEED_RAMP)
+    rffvel,rffacc=increment(rffvel,targetVel.right,SPEED_RAMP)
+    r=(lffvel+rffvel)*(WHEEL_RAD/2)
+    u=-K.dot(np.array([[xdot],[th],[thdot],[xi]]))
     xi+=(1/RATE)*(r-xdot)
-    u=-K.dot(np.array([[xtrack],[xdottrack],[th],[thdot],[xi]]))
-    v=xdottrack + (u/RATE)
-    command.left=v/WHEEL_RAD+lacc
-    command.right=v/WHEEL_RAD+racc
+    dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
+    command.left=  dxdot_tracking/WHEEL_RAD + xdot/WHEEL_RAD + (lffvel-(lffvel+rffvel)/2) 
+    command.right= dxdot_tracking/WHEEL_RAD + xdot/WHEEL_RAD + (rffvel-(lffvel+rffvel)/2)
     controlPub.publish(command)
 
