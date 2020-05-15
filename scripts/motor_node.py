@@ -54,10 +54,8 @@ rate=rospy.Rate(RATE)
 m1last=rc.ReadEncM1(ADR)[1]
 m2last=rc.ReadEncM2(ADR)[1]
 rospy.loginfo("Beginning roboclaw node")
-m1AvgDelta=AdaptiveAverage([3,2,1],[0,1,6])
-m2AvgDelta=AdaptiveAverage([3,2,1],[0,1,6])
-#m1AvgI=AdaptiveAverage([30,20,10],[0,3,6])
-#m2AvgI=AdaptiveAverage([30,20,10],[0,3,6])
+m1AvgSpeed=AdaptiveAverage([3],[0])
+m2AvgSpeed=AdaptiveAverage([3],[0])
 #last=rospy.get_rostime().to_time()
 while not rospy.is_shutdown():
     rate.sleep()
@@ -70,8 +68,6 @@ while not rospy.is_shutdown():
         rc.ForwardM2(ADR,0)
     m1enc=rc.ReadEncM1(ADR)[1]
     m2enc=rc.ReadEncM2(ADR)[1]
-    #m1ispeed=rc.ReadISpeedM1(ADR)[1]
-    #m2ispeed=rc.ReadISpeedM2(ADR)[1]
     rcLock.release()
     m1clicks=m1enc-m1last
     m2clicks=m2enc-m2last
@@ -82,17 +78,13 @@ while not rospy.is_shutdown():
     m2pos=m2enc/COUNTS_PER_RAD
     m1delta=m1clicks/COUNTS_PER_RAD
     m2delta=m2clicks/COUNTS_PER_RAD
-    m1AvgDelta.add(m1delta)
-    m2AvgDelta.add(m2delta)
-    #m1AvgI.add(m1ispeed)
-    #m2AvgI.add(m2ispeed)
+    m1AvgSpeed.add(RATE*m1delta)
+    m2AvgSpeed.add(RATE*m2delta)
     e=EncoderReading()
     e.stamp=stamp
     #CHANGE M1/M2 CORRESPONDENCE BELOW ON ALL 4 LINES
     e.leftAngle=m1pos
-    #e.leftVel=m1AvgI.value()/COUNTS_PER_RAD
-    e.leftVel=RATE*m1AvgDelta.value()
+    e.leftVel=m1AvgSpeed.value()
     e.rightAngle=m2pos
-    #e.rightVel=m2AvgI.value()/COUNTS_PER_RAD
-    e.rightVel=RATE*m2AvgDelta.value()
+    e.rightVel=m2AvgSpeed.value()
     statepub.publish(e)
