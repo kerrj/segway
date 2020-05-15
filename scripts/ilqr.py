@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''lqr controller for balancing the segway'''
+'''lqi controller for balancing the segway'''
 
 import rospy
 import numpy as np
@@ -7,7 +7,7 @@ from segway.msg import AngleReading,EncoderReading,MotorCommand
 from util import clip
 from math import copysign
 RATE=100
-ANGLE_OFFSET=.003
+ANGLE_OFFSET=.003#-.005
 WHEEL_RAD = .04
 MAX_VEL=1
 SPEED_RAMP=3/RATE#ramp value in rad/s^2 to achieve targetVel
@@ -50,16 +50,23 @@ controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
 
-K=np.array([-3.8730   ,-5.2373  ,-55.9266   ,-6.6755])#x=15,m-.15,l=.19
+K=np.array([-0.7071   ,-3.0172   ,-50.5654    ,-5.9256    ,0.7071])#1s everywhere
+#K=np.array([-2.2678   ,-4.1772   ,-52.9527    ,-6.2726    ,0.3780])#x=6
 start=rospy.get_rostime()
+xi=0#integrator value
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
         start=rospy.get_rostime()
         continue
     if rospy.get_rostime()-start>rospy.Duration(5):
+        print("go")
         targetVel.left=-.2
         targetVel.right=-.2
+    if rospy.get_rostime()-start>rospy.Duration(8):
+        print("Stop")
+        targetVel.left=.2
+        targetVel.right=.2
     command=MotorCommand()
     command.stamp=rospy.get_rostime()
     lvel,lacc=increment(lvel,targetVel.left,SPEED_RAMP)
@@ -69,11 +76,13 @@ while not rospy.is_shutdown():
         xdottrack=xdot-(lvel+rvel)*(WHEEL_RAD/2)
         xanchor=x
     else:
-        xdottrack=xdot
         xtrack=x-xanchor
-    u=-K.dot(np.array([[xtrack],[xdottrack],[th],[thdot]]))
+        xdottrack=xdot
+    r=(lvel+rvel)*(WHEEL_RAD/2)
+    xi+=(1/RATE)*(r-xdot)
+    u=-K.dot(np.array([[xtrack],[xdottrack],[th],[thdot],[xi]]))
     v=xdottrack + (u/RATE)
-    command.left=v/WHEEL_RAD + lacc
-    command.right=v/WHEEL_RAD + racc
+    command.left=v/WHEEL_RAD+lacc
+    command.right=v/WHEEL_RAD+racc
     controlPub.publish(command)
 
