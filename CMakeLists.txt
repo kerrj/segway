@@ -54,6 +54,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    AngleReading.msg
    MotorCommand.msg
+   BaseCommand.msg
    EncoderReading.msg
  )
 roslaunch_add_file_check(launch)

@@ -2,6 +2,7 @@ from queue import deque
 import numpy as np
 import time
 from scipy import signal
+from math import copysign
 class SavgolFilter(object):
     def __init__(self,size,order):
         self.size=size
@@ -105,3 +106,10 @@ class ButterFilter(object):
         return filtered[-1]
 def clip(v,minv,maxv):
     return min(max(v,minv),maxv)
+
+def increment(v,t,a):
+    dv=copysign(a,t-v)
+    newv=v+dv
+    if abs(v-t)<=1.1*a:newv=t
+    return newv,newv-v
+
