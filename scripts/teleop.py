@@ -3,7 +3,7 @@ import rospy
 from segway.msg import BaseCommand 
 rospy.init_node("teleop")
 cmd_pub=rospy.Publisher("target_vel",BaseCommand,queue_size=1)
-svel=.2
+svel=.25
 turnvel=1
 print("Type command (wasd for direction). Multiple chars on one line will mix commands. Blank line to stop")
 while not rospy.is_shutdown():

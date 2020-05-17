@@ -4,14 +4,14 @@
 import rospy
 import numpy as np
 from segway.msg import AngleReading,EncoderReading,MotorCommand,BaseCommand
-from util import clip
+from util import clip,increment
 from math import copysign
 RATE=100
 ANGLE_OFFSET=.003
 WHEEL_RAD = .04
 WHEEL_SEP = 0.1588
 TURN_IN_PLACE_THRESH=.01#threshold below which vel is considered 0 for turning in place
-MAX_LINEAR_VEL=6*WHEEL_RAD#in m/s
+MAX_LINEAR_VEL=9*WHEEL_RAD#in m/s
 MAX_ANG_VEL=3
 th = None
 thdot = None
@@ -43,13 +43,14 @@ angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
 encoderSub = rospy.Subscriber('encoders',EncoderReading,encoderCB,queue_size=1)
 targetSub = rospy.Subscriber('target_vel',BaseCommand,targetCB,queue_size=1) 
 controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
+inputPub   = rospy.Publisher('u',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
 
-#K=np.array([ -6.3974   ,-58.2077    ,-7.0080    ,5.4772])#tracking term 25
-K=np.array([-6.9666   ,-59.3161    ,-7.1695    ,6.3246])#tracking term 40
+K=np.array([-7.4494   ,-60.2510    ,-7.3056    ,7.0711])#tracking term 50
 start=rospy.get_rostime()
 xi=0#integrator value
+xiscale=2
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
@@ -57,10 +58,10 @@ while not rospy.is_shutdown():
         continue
     command=MotorCommand()
     command.stamp=rospy.get_rostime()
-    xi+=(1/RATE)*(targetVel.velocity-xdot)
+    xi+=(1/RATE)*(targetVel.velocity-xdot)*xiscale
     u=-K.dot(np.array([[xdot],[th],[thdot],[xi]]))
     dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
-    newxdot=(u/RATE)+xdot
+    newxdot=(u/RATE) + xdot
     if abs(targetVel.velocity)<.01:
         #w=(vr-vl)/WIDTH
         rffvel=((targetVel.omega*WHEEL_SEP)/2)/WHEEL_RAD
@@ -72,4 +73,5 @@ while not rospy.is_shutdown():
     command.left=  newxdot/WHEEL_RAD + lffvel
     command.right= newxdot/WHEEL_RAD + rffvel
     controlPub.publish(command)
+    inputPub.publish(MotorCommand(command.stamp,u,u))
 
