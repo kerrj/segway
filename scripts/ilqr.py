@@ -43,7 +43,6 @@ angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
 encoderSub = rospy.Subscriber('encoders',EncoderReading,encoderCB,queue_size=1)
 targetSub = rospy.Subscriber('target_vel',BaseCommand,targetCB,queue_size=1) 
 controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
-inputPub   = rospy.Publisher('u',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
 
@@ -57,7 +56,7 @@ while not rospy.is_shutdown():
         start=rospy.get_rostime()
         continue
     command=MotorCommand()
-    command.stamp=rospy.get_rostime()
+    command.header.stamp=rospy.get_rostime()
     xi+=(1/RATE)*(targetVel.velocity-xdot)*xiscale
     u=-K.dot(np.array([[xdot],[th],[thdot],[xi]]))
     dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
@@ -73,5 +72,4 @@ while not rospy.is_shutdown():
     command.left=  newxdot/WHEEL_RAD + lffvel
     command.right= newxdot/WHEEL_RAD + rffvel
     controlPub.publish(command)
-    inputPub.publish(MotorCommand(command.stamp,u,u))
 

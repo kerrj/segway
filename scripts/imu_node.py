@@ -31,8 +31,9 @@ while not rospy.is_shutdown():
     msg=AngleReading()
     xGrav,yGrav,zGrav=bno.read_gravity()
     xOmega,yOmega,zOmega=bno.read_gyroscope()
-    msg.stamp=rospy.get_rostime()
+    msg.header.stamp=rospy.get_rostime()
     msg.thdot=-xOmega
+    msg.zdot=-zOmega
     #get the angle between grav vector and upright position
     projectedGrav=np.array([yGrav,zGrav])
     desiredDir=np.array([0,-1])

@@ -10,7 +10,7 @@ while not rospy.is_shutdown():
     cmd=input("Command: ")
     print(cmd)
     msg=BaseCommand()
-    msg.stamp=rospy.get_rostime()
+    msg.header.stamp=rospy.get_rostime()
     msg.velocity=0
     msg.omega=0
     if 'w' in cmd:

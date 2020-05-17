@@ -38,7 +38,7 @@ while not rospy.is_shutdown():
     if th is None or x is None:
         continue
     command=MotorCommand()
-    command.stamp=rospy.get_rostime()
+    command.header.stamp=rospy.get_rostime()
     u=-K.dot(np.array([[x],[xdot],[th],[thdot]]))
     dxdot_tracking = (u/RATE) 
     command.left=  dxdot_tracking/WHEEL_RAD + xdottrack/WHEEL_RAD

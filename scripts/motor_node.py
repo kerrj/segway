@@ -32,7 +32,7 @@ def vel_cb(msg):
     #change m1/m2 correspondence here on both lines below
     m1vel = round(COUNTS_PER_RAD*clip(msg.left,-MAX_SPEED,MAX_SPEED))
     m2vel = round(COUNTS_PER_RAD*clip(msg.right,-MAX_SPEED,MAX_SPEED))
-    lastCommandTime=msg.stamp
+    lastCommandTime=msg.header.stamp
     if rospy.get_rostime() - lastCommandTime > rospy.Duration(TIMEOUT):
         rospy.logwarn("Ignoring stale cmd_vel message")
         return
@@ -81,10 +81,12 @@ while not rospy.is_shutdown():
     m1AvgSpeed.add(RATE*m1delta)
     m2AvgSpeed.add(RATE*m2delta)
     e=EncoderReading()
-    e.stamp=stamp
+    e.header.stamp=stamp
     #CHANGE M1/M2 CORRESPONDENCE BELOW ON ALL 4 LINES
     e.leftAngle=m1pos
     e.leftVel=m1AvgSpeed.value()
+    e.rawLeftVel=RATE*m1delta
     e.rightAngle=m2pos
     e.rightVel=m2AvgSpeed.value()
+    e.rawRightVel=RATE*m2delta
     statepub.publish(e)

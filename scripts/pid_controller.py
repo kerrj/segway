@@ -67,7 +67,7 @@ while not rospy.is_shutdown():
         continue
     targetpos+=targetspeed/RATE
     command=MotorCommand()
-    command.stamp=rospy.get_rostime()
+    command.header.stamp=rospy.get_rostime()
     intermediate=pid1.step(x-targetpos,xdot-targetspeed,1/RATE)
     u=pid2.step(th+intermediate,thdot,1/RATE)
     command.left=u
