@@ -8,6 +8,7 @@ from kalman import EKF
 WHEEL_RAD = .04
 WHEEL_SEP = 0.1588
 COUNTS_PER_REV=1632.67
+IMU_FUDGE_FACTOR=1/1.04950#this is some voodoo since the IMU for some reason overestimates velocity by a small factor, which i measured here
 
 def f(x,dt):
     #x=(x,y,v,th,thdot)
@@ -34,7 +35,7 @@ speed_res=pos_res/.01
 sigma=speed_res**2/12
 Renc=sigma*A.dot(A.T)#encoder covariance
 R=np.zeros((3,3))#observation covariance
-R[2,2]=.00001#estimate of the variance of the imu ang velocity
+R[2,2]=.001#estimate of the variance of the imu ang velocity
 R[0:2,0:2]=Renc
 kf=EKF(f,h,Q,R,np.zeros((5,1)),np.zeros((5,5)))
 
@@ -43,12 +44,16 @@ odompub=rospy.Publisher('odometry',Odometry,queue_size=10)
 lastUpdate=rospy.Time(0)
 def updateOdom(angMsg,encMsg):
     global lastUpdate,kf
+    #t=rospy.get_rostime()
     t=rospy.get_rostime()
+    if lastUpdate<rospy.Time(1):
+        lastUpdate=t
+        return
     vl=encMsg.rawLeftVel*WHEEL_RAD
     vr=encMsg.rawRightVel*WHEEL_RAD
     v=(vl+vr)/2
     wenc=(vr-vl)/WHEEL_SEP
-    wimu=angMsg.zdot
+    wimu=angMsg.zdot * IMU_FUDGE_FACTOR
     z=np.array([[v],[wenc],[wimu]])
     x=kf.update(z,fargs=((t-lastUpdate).to_sec(),))
     o=Odometry()
