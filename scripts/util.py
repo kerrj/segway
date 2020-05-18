@@ -2,7 +2,7 @@ from queue import deque
 import numpy as np
 import time
 from scipy import signal
-from math import copysign
+from math import copysign,pi,atan2
 class SavgolFilter(object):
     def __init__(self,size,order):
         self.size=size
@@ -112,4 +112,34 @@ def increment(v,t,a):
     newv=v+dv
     if abs(v-t)<=1.1*a:newv=t
     return newv,newv-v
-
+def wrapTo2Pi(th):
+    while th>=2*pi:
+        th-=2*pi
+    while th<0:
+        th+=2*pi
+    return th
+class Transformer:
+    @staticmethod
+    def pose2Mat(x,y,th):
+        return np.array([
+            [np.cos(th),-np.sin(th),x],
+            [np.sin(th),np.cos(th),y],
+            [0,0,1]])
+    @staticmethod
+    def mat2Pose(H):
+        x=H[0,2]
+        y=H[1,2]
+        th=atan2(H[1,0],H[0,0])
+        return (x,y,th)
+    @staticmethod
+    def invH(H):
+        R=H[0:2,0:2]
+        Hinv=np.eye(3)
+        Hinv[0:2,0:2]=R.T
+        Hinv[0:2,2:3]=-R.T.dot(H[0:2,2:3])
+        return Hinv
+    @staticmethod
+    def applyH(H,x,y):
+        p=np.array([[x],[y],[1]])
+        pt=H.dot(p)
+        return (pt[0,0],pt[1,0])

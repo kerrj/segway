@@ -1,0 +1,5 @@
+<launch>
+<include file="$(find segway)/launch/veltracking.launch"/>
+<node name="odometry" type="odometry.py" pkg="segway" output="screen" required="true"/>
+<node name="waypoint_fol" pkg="segway" type="waypoint_following.py" output="screen" required="true"/>
+</launch>

@@ -57,6 +57,7 @@ find_package(catkin REQUIRED COMPONENTS
    BaseCommand.msg
    EncoderReading.msg
    Odometry.msg
+   Path.msg
  )
 roslaunch_add_file_check(launch)
 ## Generate services in the 'srv' folder
@@ -76,6 +77,7 @@ roslaunch_add_file_check(launch)
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
    DEPENDENCIES
+   geometry_msgs
    std_msgs
  )
 
@@ -111,7 +113,7 @@ roslaunch_add_file_check(launch)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES segway
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime geometry_msgs
 #  DEPENDS system_lib
 )
 
