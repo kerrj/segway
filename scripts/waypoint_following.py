@@ -4,7 +4,8 @@ import numpy as np
 from segway.msg import BaseCommand,Odometry,Path
 from pure_pursuit import PurePursuit
 from math import copysign
-pp=PurePursuit(.1588,.06)#.1588 is wheel separation
+from util import RunningAverage
+pp=PurePursuit(.16,.08)#.1588 is wheel separation
 def pathCB(msg):
     global pp
     pp.updatePath(msg)
@@ -16,7 +17,7 @@ def odomCB(msg):
 rospy.Subscriber('odometry',Odometry,odomCB,queue_size=1)
 
 cmdpub=rospy.Publisher('target_vel',BaseCommand,queue_size=1)
-rate=rospy.Rate(20)
+rate=rospy.Rate(30)
 stopped=False
 while not rospy.is_shutdown():
     rate.sleep()

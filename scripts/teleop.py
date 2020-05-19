@@ -35,5 +35,10 @@ while not rospy.is_shutdown():
             l.append(p)
         path.waypoints=l
         pathpub.publish(path)
+    if 'z' in cmd:
+        path=Path()
+        l=[(.3,0),(.3,.3),(.6,.3),(.6,.6)]
+        path.waypoints=[Point(x,y,0.) for x,y in l]
+        pathpub.publish(path)
     cmd_pub.publish(msg)
 
