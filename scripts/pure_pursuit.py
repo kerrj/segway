@@ -13,9 +13,8 @@ class PurePursuit:
     def getControl(self,v):
         #v is the desired forward vel
         if self.pose is None:
-            rospy.loginfo("Path follower has no pose yet, skipping control")
             return 0,0
-        while len(self.path)>1 and hypot(self.path[1][0]-self.pose[0],self.path[1][1]-self.pose[1])<self.L:
+        while len(self.path)>1 and hypot(self.path[1][0]-self.pose[0],self.path[1][1]-self.pose[1])<self.goal_tol:
             #if we are within lookahead dist of next waypoint, increment our finger
             self.path.pop(0)
         if (len(self.path)==1 and hypot(self.pose[0]-self.path[0][0],self.pose[1]-self.path[0][1])<self.goal_tol):
@@ -36,7 +35,7 @@ class PurePursuit:
         curP=np.array(self.path[0])
         robP=np.array([self.pose[0],self.pose[1]])
         dp=np.array([self.path[1][0]-self.path[0][0],self.path[1][1]-self.path[0][1]])
-        dp=.02*dp/np.linalg.norm(dp)
+        dp=.025*dp/np.linalg.norm(dp)
         #first go forward until distance to robot starts increasing
         dist=np.linalg.norm(robP-curP)
         newdist=np.linalg.norm(robP-(curP+dp))

@@ -3,7 +3,8 @@ import rospy
 import numpy as np
 from segway.msg import BaseCommand,Odometry,Path
 from pure_pursuit import PurePursuit
-pp=PurePursuit(.2,.1)
+from math import copysign
+pp=PurePursuit(.1588,.06)#.1588 is wheel separation
 def pathCB(msg):
     global pp
     pp.updatePath(msg)
@@ -15,12 +16,15 @@ def odomCB(msg):
 rospy.Subscriber('odometry',Odometry,odomCB,queue_size=1)
 
 cmdpub=rospy.Publisher('target_vel',BaseCommand,queue_size=1)
-rate=rospy.Rate(5)
+rate=rospy.Rate(20)
+stopped=False
 while not rospy.is_shutdown():
     rate.sleep()
-    v,w=pp.getControl(.1)
+    v,w=pp.getControl(.15)
     c=BaseCommand()
     c.header.stamp=rospy.get_rostime()
     c.velocity=v
     c.omega=w
-    cmdpub.publish(c)
+    if not stopped:
+        cmdpub.publish(c)
+    stopped=v==0

@@ -11,13 +11,14 @@ ANGLE_OFFSET=.003
 WHEEL_RAD = .04
 WHEEL_SEP = 0.1588
 TURN_IN_PLACE_THRESH=.01#threshold below which vel is considered 0 for turning in place
-MAX_LINEAR_VEL=9*WHEEL_RAD#in m/s
-MAX_ANG_VEL=3
+MAX_LINEAR_VEL=.25#in m/s
+COMMAND_TIMEOUT=1
+MAX_ANG_VEL=2
 th = None
 thdot = None
 x = None
 xdot = None#vel in m/s
-targetVel=BaseCommand(rospy.Time(0),0,0)
+targetVel=BaseCommand()
 
 def angleCB(msg):
     global th,thdot
@@ -32,7 +33,6 @@ def encoderCB(msg):
 def targetCB(msg):
     global targetVel
     if abs(msg.velocity)>MAX_LINEAR_VEL or abs(msg.omega)>MAX_ANG_VEL:
-        rospy.logwarn("Target vel over max speed, scaling down")
         scale=max(abs(msg.velocity)/MAX_LINEAR_VEL,abs(msg.omega)/MAX_ANG_VEL)
         msg.velocity/=scale
         msg.omega/=scale
@@ -53,10 +53,14 @@ xiscale=2
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
-        start=rospy.get_rostime()
         continue
     command=MotorCommand()
-    command.header.stamp=rospy.get_rostime()
+    t=rospy.get_rostime()
+    command.header.stamp=t
+    if t-targetVel.header.stamp>rospy.Duration(COMMAND_TIMEOUT):
+        targetVel.velocity=0
+        targetVel.omega=0
+        targetVel.header.stamp=t
     xi+=(1/RATE)*(targetVel.velocity-xdot)*xiscale
     u=-K.dot(np.array([[xdot],[th],[thdot],[xi]]))
     dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
