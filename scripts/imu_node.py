@@ -32,12 +32,12 @@ while not rospy.is_shutdown():
     xGrav,yGrav,zGrav=bno.read_gravity()
     xOmega,yOmega,zOmega=bno.read_gyroscope()
     msg.header.stamp=rospy.get_rostime()
-    msg.thdot=-xOmega
+    msg.thdot=xOmega
     msg.zdot=-zOmega
     #get the angle between grav vector and upright position
     projectedGrav=np.array([yGrav,zGrav])
     desiredDir=np.array([0,-1])
-    sgn=-np.sign(yGrav)
+    sgn=np.sign(yGrav)
     #sign is negative on the below line to make thdot and th match
     msg.th=-sgn*np.arccos(projectedGrav.dot(desiredDir)/(np.linalg.norm(projectedGrav)*np.linalg.norm(desiredDir)))
     statepub.publish(msg)

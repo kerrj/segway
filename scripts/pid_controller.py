@@ -62,6 +62,8 @@ targetspeed=0.03
 start=rospy.get_rostime()
 while not rospy.is_shutdown():
     rate.sleep()
+    rospy.logerror("Reminder: haven't compensated for the fact angle readings are the negative of what they used to be")
+    break
     if th is None or x is None:
         start=rospy.get_rostime()
         continue

@@ -7,7 +7,7 @@ from segway.msg import AngleReading,EncoderReading,MotorCommand,BaseCommand
 from util import clip,increment
 from math import copysign
 RATE=100
-ANGLE_OFFSET=.003
+ANGLE_OFFSET=-.003
 WHEEL_RAD = .04
 WHEEL_SEP = 0.1588
 TURN_IN_PLACE_THRESH=.01#threshold below which vel is considered 0 for turning in place
@@ -46,7 +46,7 @@ controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
 
-K=np.array([-7.4494   ,-60.2510    ,-7.3056    ,7.0711])#tracking term 50
+K=np.array([-7.4494   ,60.2510    ,7.3056    ,7.0711])#tracking term 50
 start=rospy.get_rostime()
 xi=0#integrator value
 xiscale=2
@@ -63,6 +63,7 @@ while not rospy.is_shutdown():
         targetVel.header.stamp=t
     xi+=(1/RATE)*(targetVel.velocity-xdot)*xiscale
     u=-K.dot(np.array([[xdot],[th],[thdot],[xi]]))
+    print(u)
     dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
     newxdot=(u/RATE) + xdot
     if abs(targetVel.velocity)<.01:

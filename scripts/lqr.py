@@ -7,7 +7,7 @@ from segway.msg import AngleReading,EncoderReading,MotorCommand
 from util import clip
 from math import copysign
 RATE=100
-ANGLE_OFFSET=.003
+ANGLE_OFFSET=-.003
 WHEEL_RAD = .04
 th = None
 thdot = None
@@ -32,7 +32,7 @@ controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 
 rate=rospy.Rate(RATE)
 
-K=np.array([-3.8730   ,-5.2373  ,-55.9266   ,-6.6755])#x=15,m-.15,l=.19
+K=np.array([-3.8730   ,-5.2373  ,55.9266   ,6.6755])#x=15,m-.15,l=.19
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
@@ -41,7 +41,7 @@ while not rospy.is_shutdown():
     command.header.stamp=rospy.get_rostime()
     u=-K.dot(np.array([[x],[xdot],[th],[thdot]]))
     dxdot_tracking = (u/RATE) 
-    command.left=  dxdot_tracking/WHEEL_RAD + xdottrack/WHEEL_RAD
-    command.right= dxdot_tracking/WHEEL_RAD + xdottrack/WHEEL_RAD 
+    command.left=  dxdot_tracking/WHEEL_RAD + xdot/WHEEL_RAD
+    command.right= dxdot_tracking/WHEEL_RAD + xdot/WHEEL_RAD 
     controlPub.publish(command)
 
