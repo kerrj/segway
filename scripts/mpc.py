@@ -56,10 +56,12 @@ class LinearMPC:
             H = np.dot(np.dot(self.B_bar.transpose(), self.Q_bar), self.B_bar) + self.R_bar
             L = np.vstack((self.L_u_bar, np.dot(self.L_x_bar, self.B_bar)))
             self.m=osqp.OSQP()
-            self.m.setup(P=sparse.csc_matrix(H), q=C.transpose(), l=None, A=sparse.csc_matrix(L), u=b, verbose=False,warm_start=True,polish=False)
+            self.m.setup(P=sparse.csc_matrix(H), q=C.transpose(), l=None, A=sparse.csc_matrix(L), u=b, verbose=False,warm_start=True,
+                    polish=False,eps_rel=1e-5,eps_abs=1e-5,time_limit=.01,check_termination=1,scaling=30)
         else:
             self.m.update(q=C.transpose(),l=None,u=b)
         res = self.m.solve()
+        #print(res.info.iter)
         u = res.x
         x = f_bar + np.dot(self.B_bar, u[np.newaxis].transpose())
 
@@ -95,7 +97,7 @@ def test_buggy():
     Q[0,0]=10
     R=1
     S=Q
-    N=60
+    N=70
     dt=.01
     mpc=LinearMPC(A,B,Q,R,S,N,dt)
     #state is lateral offset,ang offset, steer
@@ -115,12 +117,12 @@ def test_segway():
     A[3,2]=81.6765
     B=np.array([[0],[.7432],[0],[3.6319]])
     Q=np.eye(4)
-    Q[0,0]=10
-    Q[1,1]=10
+    Q[0,0]=20
+    Q[1,1]=20
     R=1
-    S=Q
+    S=100*Q
     rate=100
-    N=50
+    N=100
     dt=1/rate
     xlo=np.array([[-1],[-.5],[-.17],[-100]])
     xhi=-xlo
@@ -129,7 +131,7 @@ def test_segway():
     mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons,x_constraints=xcons)
     import time
     x=np.array([[1],[0],[0],[0]])
-    for i in range(10):
+    for i in range(3):
         start=time.time()
         xr=np.hstack([np.array([[0],[0],[0],[0]])]*(N+1))
         utraj,xtraj=mpc.solve(x,xr)

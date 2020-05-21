@@ -56,20 +56,17 @@ A[1,2]=6.9126
 A[2,3]=1
 A[3,2]=81.6765
 B=np.array([[0],[.7432],[0],[3.6319]])
-Q=np.diag([20,30,1,1.])#dot is important
+Q=np.diag([9,9,8,8.])#dot is important
 R=1
 S=600*Q
 N=50
 dt=1/RATE
-#Q=np.diag([10,10,1,1.])
-#S=100*Q
-#N=100
-#dt=1/RATE
 xlo=np.array([[-np.inf],[-np.inf],[-np.inf],[-np.inf]])
 xhi=-xlo
 xcons=np.hstack([xlo,xhi])
 ucons=np.array([[-12,12]])
 mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons,x_constraints=xcons)
+mpc.solve(np.zeros((4,1)),get_ref(np.zeros((4,1)),N,dt))#prime the solver for warm starts?
 lastloop=rospy.get_rostime()
 while not rospy.is_shutdown():
     rate.sleep()
