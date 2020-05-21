@@ -5,7 +5,7 @@ from segway.msg import AngleReading,EncoderReading,MotorCommand,BaseCommand
 from util import clip,increment
 from math import copysign
 from mpc import LinearMPC
-RATE=75
+RATE=100
 ANGLE_OFFSET=-.003
 WHEEL_RAD = .04
 WHEEL_SEP = 0.1588
@@ -37,9 +37,11 @@ def targetCB(msg):
         msg.velocity/=scale
         msg.omega/=scale
     targetVel=msg
-def get_ref(xinit,N):
-    global targetVel,x,xdot,LINEAR_ACCEL
-    return np.repeat(np.zeros((4,1)),N+1,1)
+def get_ref(xinit,N,dt):
+    global targetVel,x,LINEAR_ACCEL
+    xr=np.repeat(np.array([[x],[targetVel.velocity],[0],[0]]),N+1,1)
+    xr[0,:]=x+(dt*targetVel.velocity)*np.cumsum(np.ones((N+1,1)))
+    return xr
 rospy.init_node("mpc")
 angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
 encoderSub = rospy.Subscriber('encoders',EncoderReading,encoderCB,queue_size=1)
@@ -54,29 +56,32 @@ A[1,2]=6.9126
 A[2,3]=1
 A[3,2]=81.6765
 B=np.array([[0],[.7432],[0],[3.6319]])
-Q=np.eye(4)
-Q[0,0]=50
-Q[1,1]=1
+Q=np.diag([80,100,1,1.])#dot is important
 R=1
 S=Q
-N=75
+N=60
 dt=1/RATE
-ucons=np.array([[-15,15]])
-mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons)
-
+xlo=np.array([[-np.inf],[-np.inf],[-np.inf],[-np.inf]])
+xhi=-xlo
+xcons=np.hstack([xlo,xhi])
+ucons=np.array([[-12,12]])
+mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons,x_constraints=xcons)
+lastloop=rospy.get_rostime()
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
         continue
     command=MotorCommand()
     t=rospy.get_rostime()
+    if t-lastloop>rospy.Duration(1.05/RATE):
+        rospy.logwarn("MPC loop timing over")
     command.header.stamp=t
     if t-targetVel.header.stamp>rospy.Duration(COMMAND_TIMEOUT):
         targetVel.velocity=0
         targetVel.omega=0
         targetVel.header.stamp=t
     xinit=np.array([[x],[xdot],[th],[thdot]])
-    xref=get_ref(xinit,N)
+    xref=get_ref(xinit,N,dt)
     ut,xt=mpc.solve(xinit,xref)#solve mpc here
     u=ut[0,0]#0th element is the control we apply here
     dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
@@ -92,4 +97,5 @@ while not rospy.is_shutdown():
     command.left=  newxdot/WHEEL_RAD + lffvel
     command.right= newxdot/WHEEL_RAD + rffvel
     controlPub.publish(command)
+    lastloop=t
 

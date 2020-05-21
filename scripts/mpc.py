@@ -23,7 +23,6 @@ class LinearMPC:
             x_constraints = np.hstack((-INF * np.ones((xdim, 1)), INF * np.ones((xdim, 1))))
         if u_constraints is None:
             u_constraints = np.hstack((-INF * np.ones((udim, 1)), INF * np.ones((udim, 1))))
-            print(u_constraints)
 
         L_x = np.vstack((np.eye(xdim), -np.eye(xdim)))
         b_x = np.vstack((x_constraints[:, 1][np.newaxis].transpose(), -x_constraints[:, 0][np.newaxis].transpose()))
@@ -123,8 +122,11 @@ def test_segway():
     rate=100
     N=50
     dt=1/rate
-    ucons=np.array([[-10,10]])
-    mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons)
+    xlo=np.array([[-1],[-.5],[-.17],[-100]])
+    xhi=-xlo
+    xcons=np.hstack([xlo,xhi])
+    ucons=np.array([[-15,15]])
+    mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons,x_constraints=xcons)
     import time
     x=np.array([[1],[0],[0],[0]])
     for i in range(1000):

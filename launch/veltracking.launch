@@ -1,4 +1,4 @@
 <launch>
 <include file="$(find segway)/launch/hardware.launch"/>
-<node name="lqr_controller" type="ilqr.py" pkg="segway" output="screen" required="true" launch-prefix="nice -n -20"/>
+<node name="controller" type="ilqr.py" pkg="segway" output="screen" required="true" launch-prefix="nice -n -20"/>
 </launch>

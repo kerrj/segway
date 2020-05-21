@@ -33,6 +33,7 @@ controlPub = rospy.Publisher('cmd_vel',MotorCommand,queue_size=1)
 rate=rospy.Rate(RATE)
 
 K=np.array([-3.8730   ,-5.2373  ,55.9266   ,6.6755])#x=15,m-.15,l=.19
+K=np.array([-4.4721   ,-7.4366   ,61.1686    ,7.4392])#x=20,xdot=20
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:

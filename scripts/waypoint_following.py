@@ -19,6 +19,7 @@ rospy.Subscriber('odometry',Odometry,odomCB,queue_size=1)
 cmdpub=rospy.Publisher('target_vel',BaseCommand,queue_size=1)
 rate=rospy.Rate(30)
 stopped=False
+
 while not rospy.is_shutdown():
     rate.sleep()
     v,w=pp.getControl(.15)
