@@ -40,7 +40,7 @@ def targetCB(msg):
 def get_ref(xinit,N,dt):
     global targetVel,x,LINEAR_ACCEL
     xr=np.repeat(np.array([[x],[targetVel.velocity],[0],[0]]),N+1,1)
-    xr[0,:]=x+(dt*targetVel.velocity)*np.cumsum(np.ones((N+1,1)))
+    xr[0,:]=0+(dt*targetVel.velocity)*np.cumsum(np.ones((N+1,1)))
     return xr
 rospy.init_node("mpc")
 angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
@@ -56,11 +56,15 @@ A[1,2]=6.9126
 A[2,3]=1
 A[3,2]=81.6765
 B=np.array([[0],[.7432],[0],[3.6319]])
-Q=np.diag([80,100,1,1.])#dot is important
+Q=np.diag([20,30,1,1.])#dot is important
 R=1
-S=Q
-N=60
+S=600*Q
+N=50
 dt=1/RATE
+#Q=np.diag([10,10,1,1.])
+#S=100*Q
+#N=100
+#dt=1/RATE
 xlo=np.array([[-np.inf],[-np.inf],[-np.inf],[-np.inf]])
 xhi=-xlo
 xcons=np.hstack([xlo,xhi])

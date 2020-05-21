@@ -56,7 +56,7 @@ class LinearMPC:
             H = np.dot(np.dot(self.B_bar.transpose(), self.Q_bar), self.B_bar) + self.R_bar
             L = np.vstack((self.L_u_bar, np.dot(self.L_x_bar, self.B_bar)))
             self.m=osqp.OSQP()
-            self.m.setup(P=sparse.csc_matrix(H), q=C.transpose(), l=None, A=sparse.csc_matrix(L), u=b, verbose=False,warm_start=True)
+            self.m.setup(P=sparse.csc_matrix(H), q=C.transpose(), l=None, A=sparse.csc_matrix(L), u=b, verbose=False,warm_start=True,polish=False)
         else:
             self.m.update(q=C.transpose(),l=None,u=b)
         res = self.m.solve()
@@ -95,14 +95,14 @@ def test_buggy():
     Q[0,0]=10
     R=1
     S=Q
-    N=50
-    dt=.02
+    N=60
+    dt=.01
     mpc=LinearMPC(A,B,Q,R,S,N,dt)
     #state is lateral offset,ang offset, steer
     #input is steering rate
     import time
     x=np.array([[1],[0],[0]])
-    for i in range(100):
+    for i in range(2):
         xr=np.hstack([np.array([[2],[0],[0]])]*(N+1))
         utraj,xtraj=mpc.solve(x,xr)
         x=x+dt*A.dot(x)+dt*B.dot(utraj[0,0])
@@ -129,12 +129,11 @@ def test_segway():
     mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons,x_constraints=xcons)
     import time
     x=np.array([[1],[0],[0],[0]])
-    for i in range(1000):
+    for i in range(10):
         start=time.time()
         xr=np.hstack([np.array([[0],[0],[0],[0]])]*(N+1))
         utraj,xtraj=mpc.solve(x,xr)
         x=x+dt*A.dot(x)+dt*B.dot(utraj[0,0])
         print(time.time()-start)
-        print('x',x.T)
 if __name__=="__main__":
     test_segway()

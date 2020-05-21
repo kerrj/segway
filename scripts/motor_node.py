@@ -17,7 +17,6 @@ ADR=0x80
 MAX_SPEED=20#units in radians
 TIMEOUT=.25
 RATE=100
-SPEED_WINDOW=30#number of samples to average speed over
 rospy.init_node("motor_node")
 rc=Roboclaw('/dev/ttyACM0',115200)
 rc.Open()
