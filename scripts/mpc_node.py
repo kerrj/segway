@@ -36,10 +36,10 @@ def targetCB(msg):
         msg.velocity/=scale
         msg.omega/=scale
     targetVel=msg
-def get_ref(xinit,N,dt):
+def get_ref(xfollow,N,dt):
     global targetVel
     xr=np.repeat(np.array([[x],[targetVel.velocity],[0],[0]]),N+1,1)
-    xr[0,:]=xinit[0,0]+(dt*targetVel.velocity)*np.cumsum(np.ones((N+1,1)))
+    xr[0,:]=xfollow+(dt*targetVel.velocity)*np.cumsum(np.ones((N+1,1)))
     return xr
 rospy.init_node("mpc")
 angleSub = rospy.Subscriber('angle',AngleReading,angleCB,queue_size=1)
@@ -65,8 +65,9 @@ xhi=-xlo
 xcons=np.hstack([xlo,xhi])
 ucons=np.array([[-20,20]])
 mpc=LinearMPC(A,B,Q,R,S,N,dt,u_constraints=ucons,x_constraints=xcons)
-mpc.solve(np.zeros((4,1)),get_ref(np.zeros((4,1)),N,dt))#prime the solver for warm starts?
+mpc.solve(np.zeros((4,1)),get_ref(0,N,dt))#prime the solver for warm starts
 lastloop=rospy.get_rostime()
+xfollow=0
 while not rospy.is_shutdown():
     rate.sleep()
     if th is None or x is None:
@@ -81,7 +82,8 @@ while not rospy.is_shutdown():
         targetVel.omega=0
         targetVel.header.stamp=t
     xinit=np.array([[x],[xdot],[th],[thdot]])
-    xref=get_ref(xinit,N,dt)
+    xref=get_ref(xfollow,N,dt)
+    xfollow=xref[0,0]#update the reference position
     ut,xt=mpc.solve(xinit,xref)#solve mpc here
     u=ut[0,0]#0th element is the control we apply here
     dxdot_tracking = (u/RATE)#this is acceleration component from stabilization, not including forward vel
