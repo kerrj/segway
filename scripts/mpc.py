@@ -57,7 +57,7 @@ class LinearMPC:
             L = np.vstack((self.L_u_bar, np.dot(self.L_x_bar, self.B_bar)))
             self.m=osqp.OSQP()
             self.m.setup(P=sparse.csc_matrix(H), q=C.transpose(), l=None, A=sparse.csc_matrix(L), u=b, verbose=False,warm_start=True,
-                    polish=False,eps_rel=1e-5,eps_abs=1e-5,time_limit=.01,check_termination=1,scaling=30)
+                    polish=True,eps_rel=1e-5,eps_abs=1e-5,time_limit=.01,check_termination=1,scaling=30,polish_refine_iter=6)
         else:
             self.m.update(q=C.transpose(),l=None,u=b)
         res = self.m.solve()

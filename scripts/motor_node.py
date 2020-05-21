@@ -53,8 +53,8 @@ rate=rospy.Rate(RATE)
 m1last=rc.ReadEncM1(ADR)[1]
 m2last=rc.ReadEncM2(ADR)[1]
 rospy.loginfo("Beginning roboclaw node")
-m1AvgSpeed=AdaptiveAverage([3],[0])
-m2AvgSpeed=AdaptiveAverage([3],[0])
+m1AvgSpeed=AdaptiveAverage([4],[0])
+m2AvgSpeed=AdaptiveAverage([4],[0])
 #last=rospy.get_rostime().to_time()
 while not rospy.is_shutdown():
     rate.sleep()
