@@ -118,6 +118,11 @@ def wrapTo2Pi(th):
     while th<0:
         th+=2*pi
     return th
+def scale(v,curlo,curhi,newlo,newhi):
+    s=(newhi-newlo)/(curhi-curlo)
+    if curhi>curlo:
+        return clip(s*v+newlo-curlo,newlo,newhi)
+    return clip(s*v+newhi-curhi,newlo,newhi)
 class Transformer:
     @staticmethod
     def pose2Mat(x,y,th):
