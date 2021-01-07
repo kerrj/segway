@@ -1,5 +1,7 @@
 # Self balancing robot
-This is(was?) a personal project to learn about control theory and keep me not bored during COVID-19.
+This is(was?) a personal project to learn about control theory and keep me not bored during COVID-19. The robot uses wheel encoders for position estimation and an IMU for tilt. The [IMU](https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor) conveniently provides a gravity vector, so I use that to estimate the tilt angle. Below is a picture of the robot. I designed and 3D printed the silver parts.
+
+<img src="media/segway_pic.jpg" alt="robot" width="300"/>
 
 ## Demos
 [Here's](https://drive.google.com/file/d/1ticmk_lMk5rpOW2iFd6ypau-YBqnOej_/view?usp=sharing) a video of the robot in operation using model-predictive control. 
@@ -15,3 +17,5 @@ All model-based controllers treat the robot as a simplified inverted pendulum on
 These velocities are scaled so that the robot uniformly follows an arc specified by the *target* forward and angular velocity, not deviating from this arc even if the robot slows down.
 
 Implementations of PID, ILQR, and MPC are visible in the code, which is built with ROS.
+
+I also made a simple implementation of pure pursuit for waypoint-following, primarily to help me test the driving capabilities. To improve odometry estimates, it fuses the wheel encoder pose update with IMU rotation information. 
